@@ -135,8 +135,7 @@ public class JamesUI extends UI implements ErrorHandler {
         }
 
         /* Error on page load */
-        if (event.getThrowable() instanceof AccessDeniedException)
-        {
+        if (event.getThrowable() instanceof AccessDeniedException) {
             AccessDeniedException exception = (AccessDeniedException) event.getThrowable();
             Label label = new Label(exception.getMessage());
             label.setWidth(-1, Unit.PERCENTAGE);

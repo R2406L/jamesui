@@ -4,8 +4,11 @@ package org.apache.james.jamesui.frontend;
 
 import java.io.File;
 
+import org.apache.james.jamesui.backend.api.Client;
 import org.apache.james.jamesui.backend.configuration.bean.JamesuiLoginUser;
 import org.apache.james.jamesui.backend.configuration.manager.EnvironmentConfigurationReader;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.slf4j.Logger;
@@ -30,6 +33,7 @@ public class HeaderPanel extends HorizontalLayout {
     private final static Logger LOG = LoggerFactory.getLogger(HeaderPanel.class);
 
     private Label welcomeMsgLabel;
+    private Label statusLabel;
     private Image jamesLogoImage;
     private Image logoutImage;
     private JamesuiLoginUser loggedUser;
@@ -42,10 +46,10 @@ public class HeaderPanel extends HorizontalLayout {
      * Constructor
      * 
      */
-    public HeaderPanel() {		
+    public HeaderPanel(Client jamesClient) {		
 
-        setSizeFull();		 
-//        setHeight(10, Unit.PERCENTAGE);
+        setSizeFull();
+        JSONObject data = jamesClient.getHealthCheck();
 
         String basepath = VaadinService.getCurrent().getBaseDirectory().getAbsolutePath(); 
 
@@ -63,14 +67,22 @@ public class HeaderPanel extends HorizontalLayout {
         });
 	   
         this.loggedUser = (JamesuiLoginUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();       
+        
         this.welcomeMsgLabel = new Label("Welcome: "+loggedUser.getUsername());      
 
+        try {
+            this.statusLabel = new Label("Status: " + data.getString("status"));
+        } catch(JSONException e) {
+            this.statusLabel = new Label("Status: unknown");
+        }
+        
         this.jamesLogoImage = new Image();
         this.jamesLogoImage.setHeight("30px");
         this.jamesLogoImage.setSource(new FileResource(new File(basepath +"/WEB-INF/images/james-logo.png")));
 
         addComponent(jamesLogoImage);
         addComponent(welcomeMsgLabel);
+        addComponent(statusLabel);
         addComponent(logoutImage);  
     }
 	

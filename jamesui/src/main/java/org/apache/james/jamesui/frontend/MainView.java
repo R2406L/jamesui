@@ -5,6 +5,7 @@ import org.apache.james.jamesui.backend.api.Client;
 import org.apache.james.jamesui.backend.configuration.bean.JamesuiConfiguration;
 import org.apache.james.jamesui.frontend.administration.AddressMappingPanel;
 import org.apache.james.jamesui.frontend.administration.DomainsPanel;
+import org.apache.james.jamesui.frontend.administration.HealthCheck;
 import org.apache.james.jamesui.frontend.administration.MailStorePanel;
 import org.apache.james.jamesui.frontend.administration.ProductConfigurationPanel;
 import org.apache.james.jamesui.frontend.administration.ProductInfoPanel;
@@ -54,13 +55,13 @@ public class MainView extends VerticalLayout implements View {
         setSpacing(true);
         setMargin(new MarginInfo(true, true, true, true)); 
 
-        this.headerPanel = new HeaderPanel();
+        this.headerPanel = new HeaderPanel(jamesClient);
 
-        this.bodyTabsheet = new TabSheet();		
+        this.bodyTabsheet = new TabSheet();
+        this.bodyTabsheet.addTab(new HealthCheck(jamesClient),"Health Check");
         this.bodyTabsheet.addTab(new DomainsPanel(jamesClient),"Domains");
         this.bodyTabsheet.addTab(new UsersPanel(jamesClient),"Users"); 
-        this.bodyTabsheet.addTab(new AddressMappingPanel(jamesClient,heigth),"Mapping");
-        this.bodyTabsheet.addTab(new MailStorePanel(jamesuiConfiguration),"Mail Store");		
+        this.bodyTabsheet.addTab(new AddressMappingPanel(jamesClient,heigth),"Mapping");		
         this.bodyTabsheet.addTab(new ProductInfoPanel(jamesuiConfiguration),"Produtc Info");	
 
         addComponent(headerPanel);

@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import jdk.internal.org.jline.utils.Log;
 
 import org.apache.james.jamesui.backend.configuration.bean.RecipientRewriteMapping;
 import org.json.JSONObject;
@@ -26,7 +27,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  *
- * @author r2406l
+ * @author r2406
  */
 public class Client {
     
@@ -81,6 +82,19 @@ public class Client {
     
     public boolean isConnectionValid() {
         return true;
+    }
+    
+    public JSONObject getHealthCheck() {
+        Response source = Send("GET", "healthcheck", "");
+        JSONObject health = new JSONObject();
+
+        try {
+            health = new JSONObject(source.text);
+        } catch(JSONException e) {
+            LOG.error(e.toString());
+        }
+        
+        return health;
     }
     
     public String[] getDomains() {
@@ -201,7 +215,17 @@ public class Client {
     }
     
     public Collection<String> getUserDomainMappings(String user, String domain) throws Exception {
-        return Collections.emptyList();
+        Response source = Send("GET", "mappings", "");
+        Collection<String> mappingList = Collections.emptyList();
+        try {
+            JSONArray domainMappings = new JSONArray(source.text);
+            for (int i = 0; i < domainMappings.length(); i++) {
+                mappingList.add(domainMappings.getString(i));
+            }
+        } catch(JSONException e) {
+            LOG.error(e.toString());
+        }
+        return mappingList;
     }
     
     public void addAddressMapping(String user, String domain, String address) throws Exception {
@@ -229,7 +253,8 @@ public class Client {
    }
    
    public void addDomainMapping(String sourcedomain, String targetDomain) throws Exception {
-       
+       Response source = Send("PUT", "domainMappings/" + sourcedomain, targetDomain);
+       Log.info(source.text);
    }
    
    public void removeDomainMapping(String domain, String targetDomain) throws Exception {
