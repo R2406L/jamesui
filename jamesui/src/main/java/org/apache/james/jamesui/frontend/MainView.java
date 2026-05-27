@@ -1,20 +1,19 @@
 package org.apache.james.jamesui.frontend;
 
 
-import org.apache.james.jamesui.backend.client.jmx.ActiveMQclient;
-import org.apache.james.jamesui.backend.client.jmx.CamelClient;
-import org.apache.james.jamesui.backend.client.jmx.JamesClient;
+import org.apache.james.jamesui.backend.api.Client;
 import org.apache.james.jamesui.backend.configuration.bean.JamesuiConfiguration;
 import org.apache.james.jamesui.frontend.administration.AddressMappingPanel;
 import org.apache.james.jamesui.frontend.administration.DomainsPanel;
+import org.apache.james.jamesui.frontend.administration.HealthCheck;
 import org.apache.james.jamesui.frontend.administration.MailStorePanel;
 import org.apache.james.jamesui.frontend.administration.ProductConfigurationPanel;
 import org.apache.james.jamesui.frontend.administration.ProductInfoPanel;
 import org.apache.james.jamesui.frontend.administration.UsersPanel;
-import org.apache.james.jamesui.frontend.configuration.ConfigurationPanel;
-import org.apache.james.jamesui.frontend.statistic.HistoryStatisticPanel;
-import org.apache.james.jamesui.frontend.statistic.MonitorPanel;
-import org.apache.james.jamesui.frontend.statistic.SnapshotStatisticsPanel;
+//import org.apache.james.jamesui.frontend.configuration.ConfigurationPanel;
+//import org.apache.james.jamesui.frontend.statistic.HistoryStatisticPanel;
+//import org.apache.james.jamesui.frontend.statistic.MonitorPanel;
+//import org.apache.james.jamesui.frontend.statistic.SnapshotStatisticsPanel;
 import org.quartz.Scheduler;
 import org.springframework.context.annotation.Scope;
 import org.springframework.security.access.annotation.Secured;
@@ -41,46 +40,40 @@ import com.vaadin.ui.TabSheet.SelectedTabChangeListener;
 @Secured("ROLE_USER")
 public class MainView extends VerticalLayout implements View {
 		
-	private static final long serialVersionUID = 1L;
-	
-	private HeaderPanel headerPanel;		
-	private TabSheet bodyTabsheet;		
+    private static final long serialVersionUID = 1L;
 
-	/**
-	 * Constructor
-	 * @throws Exception 
-	 */
-	public MainView(Scheduler scheduler,JamesClient jamesClient, ActiveMQclient activeMQclient, CamelClient camelClient, int heigth, JamesuiConfiguration jamesuiConfiguration) {		
-		
-		setSizeFull();
-		setSpacing(true);
-		setMargin(new MarginInfo(true, true, true, true)); 
-				
-		this.headerPanel = new HeaderPanel(scheduler);
-		
-		this.bodyTabsheet = new TabSheet();		
-		
-		this.bodyTabsheet.addTab(new DomainsPanel(jamesClient),"Domains");
-		this.bodyTabsheet.addTab(new UsersPanel(jamesClient),"Users"); 
-		this.bodyTabsheet.addTab(new AddressMappingPanel(jamesClient,heigth),"Mapping");
-		this.bodyTabsheet.addTab(new MailStorePanel(jamesuiConfiguration),"Mail Store");		
-		this.bodyTabsheet.addTab(new SnapshotStatisticsPanel(activeMQclient, camelClient),"Statistics");		
-		this.bodyTabsheet.addTab(new HistoryStatisticPanel(jamesuiConfiguration),"History Statistic"); 	
-		this.bodyTabsheet.addTab(new MonitorPanel(scheduler,jamesuiConfiguration),"Monitoring");
-		this.bodyTabsheet.addTab(new ConfigurationPanel(jamesClient, jamesuiConfiguration),"Server Configuration");
-		this.bodyTabsheet.addTab(new ProductInfoPanel(jamesuiConfiguration),"Produtc Info");	
-		this.bodyTabsheet.addTab(new ProductConfigurationPanel(jamesuiConfiguration), "JamseUI configuration");
-				
-		addComponent(headerPanel);
-		addComponent(bodyTabsheet);
-		
-		setExpandRatio(headerPanel, 1);
-		setExpandRatio(bodyTabsheet, 3);	
-	}
+    private HeaderPanel headerPanel;		
+    private TabSheet bodyTabsheet;		
 
-	@Override
-	public void enter(ViewChangeEvent event) {	
+    /**
+     * Constructor
+     * @throws Exception 
+     */
+    public MainView(Client jamesClient, int heigth, JamesuiConfiguration jamesuiConfiguration) {		
 
-	}
+        setSizeFull();
+        setSpacing(true);
+        setMargin(new MarginInfo(true, true, true, true)); 
+
+        this.headerPanel = new HeaderPanel(jamesClient);
+
+        this.bodyTabsheet = new TabSheet();
+        this.bodyTabsheet.addTab(new HealthCheck(jamesClient),"Health Check");
+        this.bodyTabsheet.addTab(new DomainsPanel(jamesClient),"Domains");
+        this.bodyTabsheet.addTab(new UsersPanel(jamesClient),"Users"); 
+        this.bodyTabsheet.addTab(new AddressMappingPanel(jamesClient,heigth),"Mapping");		
+        this.bodyTabsheet.addTab(new ProductInfoPanel(jamesuiConfiguration),"Produtc Info");	
+
+        addComponent(headerPanel);
+        addComponent(bodyTabsheet);
+
+        setExpandRatio(headerPanel, 1);
+        setExpandRatio(bodyTabsheet, 24);	
+    }
+
+    @Override
+    public void enter(ViewChangeEvent event) {	
+
+    }
 
 }
