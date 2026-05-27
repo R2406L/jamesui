@@ -7,7 +7,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 
-import org.apache.james.jamesui.backend.client.jmx.JamesClient;
+import org.apache.james.jamesui.backend.api.Client;
 import org.apache.james.jamesui.backend.configuration.bean.RecipientRewriteMapping;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -99,12 +99,12 @@ public class AddressMappingPanel extends VerticalLayout {
 	// A list containing the mapping mapped to be removed
 	private HashSet<String> mappingToRemoveSet = new HashSet<String>();
 	
-	private JamesClient jamesClient; 
+	private Client jamesClient; 
 
 	/**
 	 * Constructor
 	 */	
-	public AddressMappingPanel(final JamesClient jamesClient, int heigth) {		
+	public AddressMappingPanel(final Client jamesClient, int heigth) {		
 
 		setHeight(String.valueOf(heigth)); 
 
@@ -378,7 +378,7 @@ public class AddressMappingPanel extends VerticalLayout {
 	 * Show a window confirmation using Vaadin "confirm window" component and proceed with Mapping deletion if user confirm	
 	 * 
 	 */
-	private void showConfirmAndDelete(final JamesClient jamesClient) {	
+	private void showConfirmAndDelete(final Client jamesClient) {	
 		
 		ConfirmDialog.show(this.getUI(), "Please Confirm:", "Remove "+mappingToRemoveSet.size()+ " Mapping(s) ?","Yes","No", new ConfirmDialog.Listener() {
 			
@@ -540,7 +540,7 @@ public class AddressMappingPanel extends VerticalLayout {
 	/**
 	 * Utility method that fill the Users, addresses, domains Combo boxes
 	 */
-	private void insertComboData(JamesClient jamesClient){
+	private void insertComboData(Client jamesClient){
 		
 		String[] users = jamesClient.getAllusers(); //without domain part
 		String[] domains = jamesClient.getDomains(); //without user part

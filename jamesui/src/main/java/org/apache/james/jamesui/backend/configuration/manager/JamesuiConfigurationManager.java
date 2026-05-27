@@ -76,8 +76,7 @@ public class JamesuiConfigurationManager {
 	 *  
 	 * @return A JamesuiConfiguration object containing the configuration to use. return null if no configuration file was found anywhere.
 	 */
-	public JamesuiConfiguration loadConfiguration() 
-	{		
+	public JamesuiConfiguration loadConfiguration() {		
 		JamesuiConfiguration jamesuiConfiguration = new JamesuiConfiguration();
 		
 		try {   	
