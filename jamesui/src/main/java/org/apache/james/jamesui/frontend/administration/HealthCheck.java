@@ -84,7 +84,7 @@ public class HealthCheck extends VerticalLayout {
         this.statusTable.setPageLength(15);
 
         try {
-            this.updateUsersTable();
+            this.updateStatusTable();
         } catch(JSONException e) {
             
         }
@@ -99,7 +99,7 @@ public class HealthCheck extends VerticalLayout {
     /**
      * Utility method to Insert/Update the Users table with the dataset provided in argument
      */
-    private void updateUsersTable() throws JSONException {
+    private void updateStatusTable() throws JSONException {
         
         JSONObject dataSet = this.jamesClient.getHealthCheck();		
         

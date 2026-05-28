@@ -6876,3 +6876,11 @@ body .jamesuitheme.v-app .v-app-loading {
 	padding-left: 24px;
 	padding-top: 5px;
 }
+
+.jamesuitheme .v-color-red{
+    color: red;
+}
+
+.jamesuitheme .v-color-green{
+    color: green;
+}
