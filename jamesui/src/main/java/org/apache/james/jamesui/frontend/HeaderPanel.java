@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import com.vaadin.event.MouseEvents;
+import com.vaadin.shared.ui.label.ContentMode;       
 import com.vaadin.server.FileResource;
 import com.vaadin.server.VaadinService;
 import com.vaadin.ui.HorizontalLayout;
@@ -53,37 +54,56 @@ public class HeaderPanel extends HorizontalLayout {
 
         String basepath = VaadinService.getCurrent().getBaseDirectory().getAbsolutePath(); 
 
-        this.logoutImage = new Image("Logout", new FileResource(new File(basepath +"/WEB-INF/images/logout.png")));       
-        this.logoutImage.setAlternateText("Logout");
-        this.logoutImage.setHeight("16px");
-        this.logoutImage.addClickListener(new MouseEvents.ClickListener() {		
-            private static final long serialVersionUID = 1L;
-
-            @Override
-            public void click(com.vaadin.event.MouseEvents.ClickEvent event) {
-                getUI().getPage().setLocation("/jamesui/j_spring_security_logout");
-                getUI().getSession().close();
-            }
-        });
-	   
-        this.loggedUser = (JamesuiLoginUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();       
-        
-        this.welcomeMsgLabel = new Label("Welcome: "+loggedUser.getUsername());      
-
-        try {
-            this.statusLabel = new Label("Status: " + data.getString("status"));
-        } catch(JSONException e) {
-            this.statusLabel = new Label("Status: unknown");
-        }
-        
+        // Logo
         this.jamesLogoImage = new Image();
         this.jamesLogoImage.setHeight("30px");
         this.jamesLogoImage.setSource(new FileResource(new File(basepath +"/WEB-INF/images/james-logo.png")));
 
         addComponent(jamesLogoImage);
+        
+        // User
+        this.loggedUser = (JamesuiLoginUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();       
+        this.welcomeMsgLabel = new Label("Welcome: "+loggedUser.getUsername());      
+        
         addComponent(welcomeMsgLabel);
-        addComponent(statusLabel);
-        addComponent(logoutImage);  
+        
+        // Status
+        try {
+            String status = data.getString("status");
+            this.statusLabel = new Label(status);
+            if ("healthy".equals(status)) {
+                this.statusLabel.addStyleName("v-color-green");
+            } else {
+                this.statusLabel.addStyleName("v-color-red");
+            }
+            
+        } catch(JSONException e) {
+            this.statusLabel = new Label("unknown");
+        }
+        HorizontalLayout statusLayout = new HorizontalLayout();
+        statusLayout.addComponents(new Label("Status:&nbsp;", ContentMode.HTML), this.statusLabel);
+        
+        addComponent(statusLayout);
+        
+        // Logout
+        HorizontalLayout logoutLayout = new HorizontalLayout();
+        
+        this.logoutImage = new Image();
+        this.logoutImage.addStyleName("v-datefield-button");
+        this.logoutImage.setSource(new FileResource(new File(basepath +"/WEB-INF/images/logout.png")));       
+        this.logoutImage.setAlternateText("Logout");
+        this.logoutImage.setHeight("16px");
+
+        Label logoutLabel = new Label("&nbsp;Logout", ContentMode.HTML);
+        logoutLabel.addStyleName("v-datefield-button");
+
+        logoutLayout.addComponents(logoutImage, logoutLabel); 
+        logoutLayout.addLayoutClickListener(event -> {
+            getUI().getPage().setLocation("/jamesui/j_spring_security_logout");
+            getUI().getSession().close();
+        });
+        
+        addComponent(logoutLayout);  
     }
 	
 }

@@ -33,49 +33,53 @@
 @mixin jamesuitheme {
 
 
-  /* the default Vaadin theme to extends */
-  @include reindeer;
+    /* the default Vaadin theme to extends */
+    @include reindeer;
 
- 
-  /* To override an existing class name of the default theme (ie: reindeer) declare a new class with the same name.
-     In case of overrride is not necessary use addStyleName(className) to apply the style to a Component 
-   */
-  .v-tree-node span {
-     display: inline-block;
-     padding-left: 24px;
-  }
-  
-  
-  
-  /* Define a new class based on an existing one. 
-     Note the naming convention: <name-of-existing-class>-<mysuffix>
-     Where <mysuffix> is the name to use to apply the style from java:
-     mycomponent.addStyleName("mysuffix");  ("checkboxed", "unchecked", "checked" are suffix)
-   */     
-  .v-tree-checkboxed .v-tree-node-caption-unchecked div span{
-    background: url("img/checkbox-unchecked.png") no-repeat;
-    background-position: 0px 7px;   
-    padding-left: 24px;
-    padding-bottom: 7px;
-    padding-top: 7px;
-  }
-    
-    
-  .v-tree-checkboxed .v-tree-node-caption-checked div span{
-    background: url("img/checkbox-checked.png") no-repeat;
-    background-position: 0px 7px;   
-    padding-left: 24px;
-    padding-bottom: 7px;
-    padding-top: 7px;
-  }
-  
-  /* style for mapping tree root nodes */
-  .v-tree-checkboxed .v-tree-node-caption-normal div span{
-    font-weight: bold;
-    padding-bottom: 3px; 
-    padding-left: 24px; 
-    padding-top: 5px;  
-  }
 
- 
+    /* To override an existing class name of the default theme (ie: reindeer) declare a new class with the same name.
+       In case of overrride is not necessary use addStyleName(className) to apply the style to a Component 
+     */
+    .v-tree-node span {
+       display: inline-block;
+       padding-left: 24px;
+    }
+
+    /* Define a new class based on an existing one. 
+       Note the naming convention: <name-of-existing-class>-<mysuffix>
+       Where <mysuffix> is the name to use to apply the style from java:
+       mycomponent.addStyleName("mysuffix");  ("checkboxed", "unchecked", "checked" are suffix)
+     */     
+    .v-tree-checkboxed .v-tree-node-caption-unchecked div span{
+        background: url("img/checkbox-unchecked.png") no-repeat;
+        background-position: 0px 7px;   
+        padding-left: 24px;
+        padding-bottom: 7px;
+        padding-top: 7px;
+    }
+
+
+    .v-tree-checkboxed .v-tree-node-caption-checked div span{
+        background: url("img/checkbox-checked.png") no-repeat;
+        background-position: 0px 7px;   
+        padding-left: 24px;
+        padding-bottom: 7px;
+        padding-top: 7px;
+    }
+
+    /* style for mapping tree root nodes */
+    .v-tree-checkboxed .v-tree-node-caption-normal div span{
+        font-weight: bold;
+        padding-bottom: 3px; 
+        padding-left: 24px; 
+        padding-top: 5px;  
+    }
+    
+    .v-color-red{
+        color: red;
+    }
+
+    .v-color-green{
+        color: green;
+    }
 }
