@@ -21,34 +21,33 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
  */
 public class AuthenticationService implements UserDetailsService {
 	
-	private UserDao userDao;
+    private UserDao userDao;
 
-	/**
-	 * Constructor 
-	 */
-	public AuthenticationService() {
-	
-	}
+    /**
+     * Constructor 
+     */
+    public AuthenticationService() {
 
-	@Override
-	public UserDetails loadUserByUsername(String user) throws UsernameNotFoundException {
-		
-		JamesuiLoginUser jamesuiLoginUser = userDao.findByUsername(user);
-		
-		if(jamesuiLoginUser==null) {
-	       throw new UsernameNotFoundException("No such user: " + user);
-	    	
-	    } else if (jamesuiLoginUser.getAuthorities().isEmpty()) {
-	        throw new UsernameNotFoundException("User " + user  + " has no authorities");
-	     }
-		
-		return jamesuiLoginUser;
-	}
-	
-	
-	public void setUserDao(UserDao userDao) {
-		this.userDao = userDao;
-	}
+    }
+
+    @Override
+    public UserDetails loadUserByUsername(String user) throws UsernameNotFoundException {
+
+        JamesuiLoginUser jamesuiLoginUser = userDao.findByUsername(user);
+
+        if(jamesuiLoginUser==null) {
+            throw new UsernameNotFoundException("No such user: " + user);
+        } else if (jamesuiLoginUser.getAuthorities().isEmpty()) {
+            throw new UsernameNotFoundException("User " + user  + " has no authorities");
+        }
+
+        return jamesuiLoginUser;
+    }
+
+
+    public void setUserDao(UserDao userDao) {
+            this.userDao = userDao;
+    }
 
 
 }

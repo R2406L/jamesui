@@ -10,6 +10,7 @@ import org.vaadin.dialogs.ConfirmDialog;
 import com.jensjansson.pagedtable.PagedTable;
 import com.vaadin.data.Item;
 import com.vaadin.data.validator.StringLengthValidator;
+import com.vaadin.event.ItemClickEvent;
 import com.vaadin.event.MouseEvents;
 import com.vaadin.server.FileResource;
 import com.vaadin.server.VaadinService;
@@ -25,6 +26,7 @@ import com.vaadin.ui.Notification.Type;
 import com.vaadin.ui.PasswordField;
 import com.vaadin.ui.Table;
 import com.vaadin.ui.Table.ColumnGenerator;
+import com.vaadin.ui.TabSheet;
 import com.vaadin.ui.TextField;
 import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.themes.Reindeer;
@@ -45,7 +47,7 @@ public class UsersPanel extends VerticalLayout {
     private HorizontalSplitPanel horizontalSplitPanel;
     private FormLayout addUserFormLayout;
     private FormLayout editUserFormLayout;	
-    private	VerticalLayout rightPanelLayout;
+    private VerticalLayout rightPanelLayout;
     private Button addUserButton;
 
     private TextField selectedUserText;	
@@ -76,13 +78,8 @@ public class UsersPanel extends VerticalLayout {
         this.usersTable.addStyleName(Reindeer.TABLE_STRONG);		
         this.usersTable.setWidth(90, Unit.PERCENTAGE);
         this.usersTable.setPageLength(15);
-
-        /* Delete user column */	
         this.usersTable.addGeneratedColumn("Delete", new DeleteColoumnGenerator());					 
-        /* Change user password column */	 
-         this.usersTable.addGeneratedColumn("Edit", new EditColoumnGenerator());
         this.usersTable.setColumnWidth("Delete", 40);
-        this.usersTable.setColumnWidth("Edit", 30);
 
         this.updateUsersTable(dataSet);
 
@@ -128,7 +125,7 @@ public class UsersPanel extends VerticalLayout {
         this.changePasswordButton.addClickListener(new ChangeUserPasswordButtonListener());
 
         //------- Right panel: the editing form to add a new user and modify password
-        this.rightPanelLayout = new VerticalLayout(); 
+        VerticalLayout addUserPanelLayout = new VerticalLayout(); 
 
         /* add user form */
         this.addUserFormLayout = new FormLayout();	
@@ -139,7 +136,10 @@ public class UsersPanel extends VerticalLayout {
         this.addUserFormLayout.addComponent(newUserPasswordTextField);
         this.addUserFormLayout.addComponent(addUserButton);	
 
-        /* "edit user password form": enabled and filled when the user select an item */		
+        addUserPanelLayout.addComponent(addUserFormLayout);
+        
+        VerticalLayout editUserPanelLayout = new VerticalLayout(); 
+        
         this.editUserFormLayout = new FormLayout();
         this.editUserFormLayout.setMargin(new MarginInfo(true,false,false,true)); 
         this.editUserFormLayout.setSpacing(true);
@@ -150,13 +150,16 @@ public class UsersPanel extends VerticalLayout {
         this.editUserFormLayout.addComponent(retypeNewUserPasswordText);		
         this.editUserFormLayout.addComponent(changePasswordButton);	
 
-        this.rightPanelLayout.addComponent(addUserFormLayout);
-        this.rightPanelLayout.addComponent(editUserFormLayout);		
+        editUserPanelLayout.addComponent(editUserFormLayout);	
+        
+        TabSheet usersTabsheet = new TabSheet();
+        usersTabsheet.addTab(addUserPanelLayout,"Add User");
+        usersTabsheet.addTab(editUserPanelLayout,"Edit User");
 
         this.horizontalSplitPanel = new HorizontalSplitPanel();
         this.horizontalSplitPanel.setStyleName(Reindeer.SPLITPANEL_SMALL);
         this.horizontalSplitPanel.setFirstComponent(leftPanelLayout);	  
-        this.horizontalSplitPanel.setSecondComponent(rightPanelLayout);	
+        this.horizontalSplitPanel.setSecondComponent(usersTabsheet);	
         this.horizontalSplitPanel.setLocked(true);
 
         this.addComponent(horizontalSplitPanel);			
@@ -198,63 +201,22 @@ public class UsersPanel extends VerticalLayout {
 	
 	
     /**
-     * Column generator for Edit column of the user Table
-     * @author fulvio
-     *
-     */
-    private class EditColoumnGenerator implements ColumnGenerator {
-
-        private static final long serialVersionUID = -9039124416372118990L;
-
-        @Override
-        public Object generateCell(final Table source, final Object itemId, Object columnId) {				      
-            String basepath = VaadinService.getCurrent().getBaseDirectory().getAbsolutePath();
-            FileResource resource = new FileResource(new File(basepath +"/WEB-INF/images/edit.png")); 
-
-            Image editUserImage = new Image("", resource);
-            editUserImage.setHeight("16px");
-            editUserImage.setDescription("Change Password");
-            editUserImage.setAlternateText("Change Password");
-            editUserImage.addClickListener(new MouseEvents.ClickListener() {
-
-                private static final long serialVersionUID = 1L;
-
-                @Override
-                public void click(com.vaadin.event.MouseEvents.ClickEvent event) {
-
-                              String userToEdit = (String) source.getContainerDataSource().getItem(itemId).getItemProperty("Users").getValue();								
-                              editUserFormLayout.setEnabled(true);	
-                              newUserPasswordText.setValue("");
-                              retypeNewUserPasswordText.setValue("");
-                              selectedUserText.setValue(userToEdit);	
-                              selectedUserText.setEnabled(false);
-                }
-            });	
-
-            return editUserImage;
-        }		
-    }	
-	
-	
-    /**
      * Button Listener invoked when the user press the "Change password" button
      * @author fulvio
      *
      */
-    private class ChangeUserPasswordButtonListener implements com.vaadin.ui.Button.ClickListener
-    {
-            private static final long serialVersionUID = 1L;
+    private class ChangeUserPasswordButtonListener implements com.vaadin.ui.Button.ClickListener {
+        private static final long serialVersionUID = 1L;
 
-            public void buttonClick(ClickEvent event) 
-            {			
-                    if( newUserPasswordText.getValue().equals(retypeNewUserPasswordText.getValue()) && StringUtils.isNotEmpty(newUserPasswordText.getValue()) && StringUtils.isNotEmpty(retypeNewUserPasswordText.getValue()))				
-                            showConfirmEdit("Confirm new password ?", selectedUserText.getValue(),newUserPasswordText.getValue(), jamesClient);
-                    else{
-                            Notification.show("The two passwords must be equals and not empty, retry", Type.ERROR_MESSAGE);
-                            newUserPasswordText.setValue("");
-                            retypeNewUserPasswordText.setValue("");
-                    }	
-            }
+        public void buttonClick(ClickEvent event) {			
+            if( newUserPasswordText.getValue().equals(retypeNewUserPasswordText.getValue()) && StringUtils.isNotEmpty(newUserPasswordText.getValue()) && StringUtils.isNotEmpty(retypeNewUserPasswordText.getValue()))				
+                showConfirmEdit("Confirm new password ?", selectedUserText.getValue(),newUserPasswordText.getValue(), jamesClient);
+            else{
+                Notification.show("The two passwords must be equals and not empty, retry", Type.ERROR_MESSAGE);
+                newUserPasswordText.setValue("");
+                retypeNewUserPasswordText.setValue("");
+            }	
+        }
     }
 	
 	
@@ -263,32 +225,30 @@ public class UsersPanel extends VerticalLayout {
      * @author fulvio
      *
      */
-    private class AddUserButtonListener implements com.vaadin.ui.Button.ClickListener
-    {
-            private static final long serialVersionUID = 1L;
+    private class AddUserButtonListener implements com.vaadin.ui.Button.ClickListener {
+        private static final long serialVersionUID = 1L;
 
-            public void buttonClick(ClickEvent event) {
+        public void buttonClick(ClickEvent event) {
 
-                    /* call the validators assigned at the input field: if fail, execution is stopped */
-                    newUserTextField.validate(); 
-                    newUserPasswordTextField.validate();
+            /* call the validators assigned at the input field: if fail, execution is stopped */
+            newUserTextField.validate(); 
+            newUserPasswordTextField.validate();
 
-                    if(!newUserTextField.getValue().contains("@"))
-                            Notification.show("Error, Username must have a @domainpart with existing domain", Type.ERROR_MESSAGE);
-                    else{					
-                            String domainToCheck = newUserTextField.getValue().split("@")[1]; 
+            if(!newUserTextField.getValue().contains("@"))
+                Notification.show("Error, Username must have a @domainpart with existing domain", Type.ERROR_MESSAGE);
+            else{					
+                String domainToCheck = newUserTextField.getValue().split("@")[1]; 
 
-                            if(jamesClient.containsDomain(domainToCheck)){
-                                    jamesClient.addUser(newUserTextField.getValue(), newUserPasswordTextField.getValue());
-                                    Notification.show("New User Added successfully", Type.HUMANIZED_MESSAGE);
-                                    updateUsersTable(jamesClient.getAllusers());					
-                            }else{
-                                    Notification.show("Provided domain: "+domainToCheck+" does not exist in James", Type.ERROR_MESSAGE);
-                            }
-                    }
-            }		
+                if(jamesClient.containsDomain(domainToCheck)){
+                    jamesClient.addUser(newUserTextField.getValue(), newUserPasswordTextField.getValue());
+                    Notification.show("New User Added successfully", Type.HUMANIZED_MESSAGE);
+                    updateUsersTable(jamesClient.getAllusers());					
+                }else{
+                    Notification.show("Provided domain: "+domainToCheck+" does not exist in James", Type.ERROR_MESSAGE);
+                }
+            }
+        }		
     }
-	
 	
     /**
      * Utility method to Insert/Update the Users table with the dataset provided in argument
@@ -301,14 +261,28 @@ public class UsersPanel extends VerticalLayout {
 
         usersTable.removeAllItems();
 
-        for (int i=0; i<dataSet.length; i++)
-        {        	
-           newItemId = usersTable.addItem();
-           row = usersTable.getItem(newItemId);
-           row.getItemProperty("Users").setValue(dataSet[i]);
+        for (String user : dataSet) {
+            newItemId = usersTable.addItem();
+            row = usersTable.getItem(newItemId);
+            row.getItemProperty("Users").setValue(user);
         }
+        
+        usersTable.addItemClickListener(new ItemClickEvent.ItemClickListener() {
+            @Override
+            public void itemClick(ItemClickEvent event) {
+                Object itemId = event.getItemId();
+                String clickedUser = (String) event.getItem().getItemProperty("Users").getValue();
+                Notification.show("Selected user: " + clickedUser);
+                editUserFormLayout.setEnabled(true);	
+                newUserPasswordText.setValue("");
+                retypeNewUserPasswordText.setValue("");
+                selectedUserText.setValue(clickedUser);	
+                selectedUserText.setEnabled(false);
+            }
+        });
+
         usersTable.refreshRowCache();        
-        totalUsers.setValue("Total User: "+dataSet.length);
+        totalUsers.setValue("Total User: " + dataSet.length);
     }
 	
     /**

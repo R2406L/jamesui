@@ -38,6 +38,8 @@ public class ProductInfoPanel extends VerticalLayout {
      */
     public ProductInfoPanel(JamesuiConfiguration jamesuiConfiguration) {
 
+        LOG.error(jamesuiConfiguration.toString());
+        
         setSizeFull();	
         setCaption("Product Info");
 
