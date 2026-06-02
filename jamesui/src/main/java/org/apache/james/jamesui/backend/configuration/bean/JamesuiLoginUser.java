@@ -31,59 +31,58 @@ public class JamesuiLoginUser implements UserDetails{
      * Constructor
      */
     public JamesuiLoginUser(String userName, String password, ArrayList<GrantedAuthority> ga) {
-
-            this.userName = userName;
-            this.password = password;	
-            this.grantedAuthority = ga;
+        this.userName = userName;
+        this.password = password;	
+        this.grantedAuthority = ga;
     }
 
 
     @Override
     public Collection<GrantedAuthority> getAuthorities() {		
-            return this.grantedAuthority;
+        return this.grantedAuthority;
     }
 
 
     @Override
     public String getPassword() {			
-            return this.password;
+        return this.password;
     }
 
 
     @Override
     public String getUsername() {			
-            return this.userName;
+        return this.userName;
     }
 
 
     @Override
     public boolean isAccountNonExpired() {			
-            return true;
+        return true;
     }
 
 
     @Override
     public boolean isAccountNonLocked() {			
-            return true;
+        return true;
     }
 
 
     @Override
     public boolean isCredentialsNonExpired() {			
-            return true;
+        return true;
     }
 
 
     @Override
     public boolean isEnabled() {			
-            return true;
+        return true;
     }
 
 
     @Override
     public String toString() {
-            return "JamesUIuser [userName=" + userName + ", password="
-                            + password + ", grantedAuthority=" + grantedAuthority + "]";
+        return "JamesUIuser [userName=" + userName + ", password="
+                        + password + ", grantedAuthority=" + grantedAuthority + "]";
     }
 
 }

@@ -18,6 +18,7 @@ import java.util.Collections;
 import java.util.List;
 import jdk.internal.org.jline.utils.Log;
 
+import org.apache.james.jamesui.backend.configuration.bean.JamesuiConfiguration;
 import org.apache.james.jamesui.backend.configuration.bean.RecipientRewriteMapping;
 import org.json.JSONObject;
 import org.json.JSONArray;
@@ -31,6 +32,19 @@ import org.slf4j.LoggerFactory;
  */
 public class Client {
     
+    private JamesuiConfiguration jamesuiConfiguration;
+    
+    /**
+    * Constructor
+    */
+
+    public Client() {
+    }
+    
+    public void setConfiguration(JamesuiConfiguration jamesuiConfiguration) {
+        this.jamesuiConfiguration = jamesuiConfiguration;
+    }
+    
     private static class Response {
         public static int code;
         public static String text;
@@ -42,13 +56,12 @@ public class Client {
     }
     
     private final static Logger LOG = LoggerFactory.getLogger(Client.class);
-    private final static String HOST = "http://127.0.0.1:8000";
     
     private Response Send(String method, String path, String body) {
         URI url;
        
         try {
-            url = new URI(HOST + "/" + path);
+            url = new URI(jamesuiConfiguration.getJamesApiUrl() + "/" + path);
         } catch (URISyntaxException e) {
             LOG.error(e.toString());
             return new Response(500, "");
@@ -172,42 +185,6 @@ public class Client {
         }
         Response source = Send("PUT", "users/" + user + "?force", password.toString());
         return source.code == 204;
-    }
-    
-    public boolean isImapServerStarted() throws Exception {
-        return true;
-    }
-    
-    public boolean stopImapServer() throws Exception {
-        return true;
-    }
-    
-    public boolean startImapServer() throws Exception {
-        return true;
-    }
-    
-    public boolean isPop3ServerStarted() throws Exception {
-        return true;
-    }
-    
-    public boolean startPop3Server() throws Exception {
-        return true;
-    }
-    
-    public boolean stopPop3Server() throws Exception {
-        return true;
-    }
-    
-    public boolean isSmtpServerStarted() throws Exception {
-        return true;
-    }
-    
-    public boolean startSmtpServer() throws Exception {
-        return true;
-    }
-    
-    public boolean stopSmtpServer() throws Exception {
-        return true;
     }
     
     public List<RecipientRewriteMapping> listMappings() {
