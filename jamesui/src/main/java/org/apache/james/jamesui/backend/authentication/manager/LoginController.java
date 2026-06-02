@@ -14,19 +14,16 @@ import org.springframework.web.bind.annotation.RequestParam;
 */
 @Controller
 @RequestMapping("/")
-public class LoginController
-{
-	@RequestMapping(value = "/", method = RequestMethod.GET)
-	/* "error" is a param in the url insert by Spring security (See security.xml) */
-	public String login(@RequestParam(value = "error", defaultValue = "false", required = false)Boolean isError, ModelMap model)
-	{
-		if (isError)
-		{			
-			model.put("isError", isError); /* "isError"  key used in login.ftl page */			
-		}
-		
-		return "login"; /* login.ftl */
-	}
+public class LoginController {
+    @RequestMapping(value = "/", method = RequestMethod.GET)
+    /* "error" is a param in the url insert by Spring security (See security.xml) */
+    public String login(@RequestParam(value = "error", defaultValue = "false", required = false)Boolean isError, ModelMap model) {
+        if (isError) {			
+            model.put("isError", isError); /* "isError"  key used in login.ftl page */			
+        }
+
+        return "login"; /* login.ftl */
+    }
 }
 
 

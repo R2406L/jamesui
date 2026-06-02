@@ -18,72 +18,72 @@ import org.springframework.security.core.userdetails.UserDetails;
  */
 public class JamesuiLoginUser implements UserDetails{
 		
-		private static final long serialVersionUID = 1L;
-		
-		private String userName;
-		private String password;
-		
-		//add here additional fields about user information and provide get/set methods 
-		
-		private ArrayList<GrantedAuthority> grantedAuthority;
+    private static final long serialVersionUID = 1L;
 
-		/**
-		 * Constructor
-		 */
-		public JamesuiLoginUser(String userName, String password, ArrayList<GrantedAuthority> ga) {
-			
-			this.userName = userName;
-			this.password = password;	
-			this.grantedAuthority = ga;
-		}
+    private String userName;
+    private String password;
 
-	
-		@Override
-		public Collection<GrantedAuthority> getAuthorities() {		
-			return this.grantedAuthority;
-		}
+    //add here additional fields about user information and provide get/set methods 
+
+    private ArrayList<GrantedAuthority> grantedAuthority;
+
+    /**
+     * Constructor
+     */
+    public JamesuiLoginUser(String userName, String password, ArrayList<GrantedAuthority> ga) {
+
+            this.userName = userName;
+            this.password = password;	
+            this.grantedAuthority = ga;
+    }
 
 
-		@Override
-		public String getPassword() {			
-			return this.password;
-		}
+    @Override
+    public Collection<GrantedAuthority> getAuthorities() {		
+            return this.grantedAuthority;
+    }
 
 
-		@Override
-		public String getUsername() {			
-			return this.userName;
-		}
+    @Override
+    public String getPassword() {			
+            return this.password;
+    }
 
 
-		@Override
-		public boolean isAccountNonExpired() {			
-			return true;
-		}
+    @Override
+    public String getUsername() {			
+            return this.userName;
+    }
 
 
-		@Override
-		public boolean isAccountNonLocked() {			
-			return true;
-		}
+    @Override
+    public boolean isAccountNonExpired() {			
+            return true;
+    }
 
 
-		@Override
-		public boolean isCredentialsNonExpired() {			
-			return true;
-		}
+    @Override
+    public boolean isAccountNonLocked() {			
+            return true;
+    }
 
 
-		@Override
-		public boolean isEnabled() {			
-			return true;
-		}
+    @Override
+    public boolean isCredentialsNonExpired() {			
+            return true;
+    }
 
 
-		@Override
-		public String toString() {
-			return "JamesUIuser [userName=" + userName + ", password="
-					+ password + ", grantedAuthority=" + grantedAuthority + "]";
-		}
+    @Override
+    public boolean isEnabled() {			
+            return true;
+    }
+
+
+    @Override
+    public String toString() {
+            return "JamesUIuser [userName=" + userName + ", password="
+                            + password + ", grantedAuthority=" + grantedAuthority + "]";
+    }
 
 }
