@@ -2,7 +2,6 @@ package org.apache.james.jamesui.frontend;
 
 import java.net.ConnectException;
 
-import org.apache.commons.configuration.ConfigurationException;
 import org.apache.james.jamesui.backend.api.Client;
 import org.apache.james.jamesui.backend.configuration.bean.JamesuiConfiguration;
 import org.apache.james.jamesui.backend.configuration.manager.JamesuiConfigurationManager;
@@ -83,17 +82,18 @@ public class JamesUI extends UI implements ErrorHandler {
         String errorMessage = null;
 
         try{	
+            /* load and check jamesui.config or jamesui-devel.conf file */
+            this.jamesuiConfigurationManager = new JamesuiConfigurationManager();
+            JamesuiConfiguration jamesuiConfiguration = jamesuiConfigurationManager.loadConfiguration();
+            this.jamesClient.setConfiguration(jamesuiConfiguration);
+            
             /* check api is available connection */
             if(!this.jamesClient.isConnectionValid()) 
             {
                errorMessage = "Error connecting with James, the server in up and running ? and jamesui.config file is available and correct ?";
                LOG.error("Error connecting with James server, server is up adn running ?");
                throw new ConnectException();
-            }   
-
-            /* load and check jamesui.config or jamesui-devel.conf file */
-            this.jamesuiConfigurationManager = new JamesuiConfigurationManager();
-            JamesuiConfiguration jamesuiConfiguration = jamesuiConfigurationManager.loadConfiguration();	
+            }
 
             this.mainView = new MainView(jamesClient, getPage().getBrowserWindowHeight(), jamesuiConfiguration);			
             this.navigator.addView("", mainView);

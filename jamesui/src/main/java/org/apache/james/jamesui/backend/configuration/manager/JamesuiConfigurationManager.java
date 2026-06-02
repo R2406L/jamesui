@@ -28,9 +28,6 @@ public class JamesuiConfigurationManager {
     /* config filename that must be placed by the user in TOMCAT/conf folder */
     private static final String CONFIG_FILE_NAME = "jamesui.config";
 
-    /* config filename placed inside the war file used for Eclipse development */
-    private static final String DEVEL_CONFIG_FILE_NAME = "jamesui-devel.config";
-
     /*
      * Constructor
      */
