@@ -15,7 +15,10 @@ import java.net.http.HttpRequest.BodyPublishers;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import jdk.internal.org.jline.utils.Log;
 
 import org.apache.james.jamesui.backend.configuration.bean.JamesuiConfiguration;
@@ -33,6 +36,7 @@ import org.slf4j.LoggerFactory;
 public class Client {
     
     private JamesuiConfiguration jamesuiConfiguration;
+    private final static Logger LOG = LoggerFactory.getLogger(Client.class);
     
     /**
     * Constructor
@@ -54,8 +58,6 @@ public class Client {
             this.text = text;
         }
     }
-    
-    private final static Logger LOG = LoggerFactory.getLogger(Client.class);
     
     private Response Send(String method, String path, String body) {
         URI url;
@@ -84,12 +86,13 @@ public class Client {
             LOG.error(e.toString());
             return new Response(500, "");
         }
-        
+
         if (response.statusCode() < 200 && response.statusCode() >= 300) {
             LOG.error("Apache James response error " + response.statusCode() + ": " + response.body());
             return new Response(500, "");
         }
         
+        LOG.debug("Server response: " + response.body().toString());
         return new Response(response.statusCode(), response.body().toString());
     }
     
@@ -110,6 +113,7 @@ public class Client {
         return health;
     }
     
+    // Domains
     public String[] getDomains() {
         Response source = Send("GET", "domains", "");
         try {
@@ -139,6 +143,7 @@ public class Client {
         return true;
     }
     
+    // Users and mailboxes
     public String[] getAllusers() {
         Response source = Send("GET", "users", "");
         try {
@@ -187,8 +192,86 @@ public class Client {
         return source.code == 204;
     }
     
+    public String[][] getUserMailboxes(String user) {
+        Response source = Send("GET", "users/" + user + "/mailboxes", "");
+        try {
+            JSONArray result = new JSONArray(source.text);
+            String[][] mailboxes = new String[result.length()][2];
+            for (int i = 0; i < result.length(); i++) {
+                mailboxes[i][0] = result.getJSONObject(i).getString("mailboxId");
+                mailboxes[i][1] = result.getJSONObject(i).getString("mailboxName");
+            }
+            return mailboxes;
+        } catch(JSONException e) {
+            LOG.error(e.toString());
+            return new String[0][0];
+        }
+    }
+    
+    public boolean reindexUserMailboxes(String user) {
+        Response source = Send("POST", "users/" + user + "/mailboxes?task=reIndex&messagesPerSecond=100&mode=fixOutdated", "");
+        return source.code == 201;
+    }
+    
+    public boolean setUserQuota(String user, int size, int count){
+        JSONObject quota = new JSONObject();
+        try {
+            quota.put("count", count);
+            quota.put("size", size);
+        } catch(JSONException e) {
+            LOG.error(e.toString());
+            return false;
+        }
+        Response resp = Send("PUT", "/quota/users/"+user, quota.toString());
+        return resp.code == 204;
+    }
+    
+    public int[][] getUserQuota(String user) {
+        Response source = Send("GET", "quota/users/"+user, "");
+        int[][] response = new int[2][3];
+        JSONObject quotas = new JSONObject();
+        try {
+            quotas = new JSONObject(source.text);
+            JSONObject userQuota = quotas.getJSONObject("user");
+            response[0][0] = userQuota.getInt("size");
+            response[1][0] = userQuota.getInt("count");
+            
+            JSONObject userOccQuota = quotas.getJSONObject("occupation");
+            response[0][1] = userOccQuota.getInt("size");
+            response[1][1] = userOccQuota.getInt("count");
+            
+            JSONObject ratio = userOccQuota.getJSONObject("ratio");
+            response[0][2] = (int) (ratio.getFloat("size") * 100);
+            response[1][2] = (int) (ratio.getFloat("count") * 100);
+        } catch(JSONException e) {
+            LOG.error(e.toString());
+        }
+        return response;
+    }
+    
+    // Extension methods
     public List<RecipientRewriteMapping> listMappings() {
-        return new ArrayList<RecipientRewriteMapping>();
+        List<RecipientRewriteMapping> mappings = new ArrayList<RecipientRewriteMapping>();
+        Response source = Send("GET", "mappings", "");
+        try {
+            JSONObject result = new JSONObject(source.text);
+            Iterator<String> keys = result.keys();
+            
+            while(keys.hasNext()) {
+                String key = keys.next();
+                Set<String> recipients = new HashSet<>();
+                JSONArray recipientSources = result.getJSONArray(key);
+                for (int i = 0; i < recipientSources.length(); i++) {
+                    recipients.add(recipientSources.getJSONObject(i).getString("mapping"));
+                }
+                RecipientRewriteMapping mapping = new RecipientRewriteMapping(key, recipients);
+                mappings.add(mapping);
+            }
+            return mappings;
+        } catch(JSONException e) {
+            LOG.error(e.toString());
+            return mappings;
+        }
     }
     
     public Collection<String> getUserDomainMappings(String user, String domain) throws Exception {
@@ -205,37 +288,34 @@ public class Client {
         return mappingList;
     }
     
-    public void addAddressMapping(String user, String domain, String address) throws Exception {
-        
+    public boolean addAddressMapping(String user, String domain, String address) throws Exception {
+        Response source = Send("POST", "/mappings/address/" + user + "@" + domain + "/targets/" + address, "");
+        return source.code == 204;
     }
     
-    public void addRegexMapping(String user, String domain, String aregexp) throws Exception {
-        
+    public boolean addRegexMapping(String user, String domain, String aregexp) throws Exception {
+        Response source = Send("POST", "/mappings/regex/" + user + "@" + domain + "/targets/" + aregexp, "");
+        return source.code == 204;
     }
     
-    public void removeAddressMapping(String user, String domain, String address) throws Exception {
-        
+    public boolean removeAddressMapping(String user, String domain, String address) throws Exception {
+        Response source = Send("DELETE", "/mappings/address/" + user + "@" + domain + "/targets/" + address, "");
+        return source.code == 204;
     }
     
-    public void removeRegexMapping(String user, String domain, String regex) throws Exception {
-        
+    public boolean removeRegexMapping(String user, String domain, String regex) throws Exception {
+        Response source = Send("DELETE", "/mappings/regex/" + user + "@" + domain + "/targets/" + regex, "");
+        return source.code == 204;
     }
     
-    public void addErrorMapping(String user, String domain, String errorMapping) throws Exception {
-        
-    }
-    
-   public void removeErrorMapping(String user, String domain, String error) throws Exception {
-       
-   }
-   
-   public void addDomainMapping(String sourcedomain, String targetDomain) throws Exception {
+   public boolean addDomainMapping(String sourcedomain, String targetDomain) throws Exception {
        Response source = Send("PUT", "domainMappings/" + sourcedomain, targetDomain);
-       Log.info(source.text);
+       return source.code == 204;
    }
    
-   public void removeDomainMapping(String domain, String targetDomain) throws Exception {
-       
+   public boolean removeDomainMapping(String domain, String targetDomain) throws Exception {
+        Response source = Send("DELETE", "/domainMappings/" + domain, targetDomain);
+        return source.code == 204;
    }
    
 }

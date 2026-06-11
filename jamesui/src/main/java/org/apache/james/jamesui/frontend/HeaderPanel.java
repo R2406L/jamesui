@@ -73,8 +73,10 @@ public class HeaderPanel extends HorizontalLayout {
             this.statusLabel = new Label(status);
             if ("healthy".equals(status)) {
                 this.statusLabel.addStyleName("v-color-green");
-            } else {
+            } else if ("unhealthy".equals(status)) {
                 this.statusLabel.addStyleName("v-color-red");
+            } else {
+                this.statusLabel.addStyleName("v-color-orange");
             }
             
         } catch(JSONException e) {

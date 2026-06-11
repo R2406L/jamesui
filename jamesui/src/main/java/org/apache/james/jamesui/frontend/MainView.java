@@ -35,14 +35,15 @@ public class MainView extends VerticalLayout implements View {
 		
     private static final long serialVersionUID = 1L;
 
-    private HeaderPanel headerPanel;		
-    private TabSheet bodyTabsheet;		
+    private HeaderPanel headerPanel;
+    private TabSheet bodyTabsheet;
+    private FooterPanel footer;
 
     /**
      * Constructor
      * @throws Exception 
      */
-    public MainView(Client jamesClient, int heigth, JamesuiConfiguration jamesuiConfiguration) {		
+    public MainView(Client jamesClient, JamesuiConfiguration jamesuiConfiguration) {		
 
         setSizeFull();
         setSpacing(true);
@@ -54,14 +55,17 @@ public class MainView extends VerticalLayout implements View {
         this.bodyTabsheet.addTab(new HealthCheck(jamesClient),"Health Check");
         this.bodyTabsheet.addTab(new DomainsPanel(jamesClient),"Domains");
         this.bodyTabsheet.addTab(new UsersPanel(jamesClient),"Users"); 
-        this.bodyTabsheet.addTab(new AddressMappingPanel(jamesClient,heigth),"Mapping");		
-        this.bodyTabsheet.addTab(new ProductInfoPanel(jamesuiConfiguration),"Produtc Info");	
+        this.bodyTabsheet.addTab(new AddressMappingPanel(jamesClient),"Mapping");		
+        this.bodyTabsheet.addTab(new ProductInfoPanel(jamesuiConfiguration),"Produtc Info");
+        
+        this.footer = new FooterPanel(jamesClient);
 
         addComponent(headerPanel);
         addComponent(bodyTabsheet);
+        addComponent(footer);
 
         setExpandRatio(headerPanel, 1);
-        setExpandRatio(bodyTabsheet, 24);	
+        setExpandRatio(bodyTabsheet, 24);
     }
 
     @Override
