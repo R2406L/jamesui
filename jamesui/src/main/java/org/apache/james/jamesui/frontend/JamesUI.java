@@ -95,15 +95,16 @@ public class JamesUI extends UI implements ErrorHandler {
                throw new ConnectException();
             }
 
-            this.mainView = new MainView(jamesClient, getPage().getBrowserWindowHeight(), jamesuiConfiguration);			
+            this.mainView = new MainView(jamesClient, jamesuiConfiguration);			
             this.navigator.addView("", mainView);
             this.configurationView = new ConfigurationView();	
             this.navigator.addView(CONFIGURATION_PAGE, configurationView);		
             this.mainLayout.addComponent(mainView);			
             setContent(mainLayout);		
 
-        }catch (Exception e) {	
+        } catch (Exception e) {	
            this.navigator.addView("", new ErrorView(errorMessage));
+           LOG.error("Error detected: " + e);
         }		
     }
 	

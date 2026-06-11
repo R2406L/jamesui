@@ -32,7 +32,4 @@
 	<!-- Spring security configuration -->
 	<import resource="spring-security.xml"/>
 	
-	<!-- Spring - Quartz configuration -->
-	<import resource="spring-quartz.xml"/>
-
 </beans>

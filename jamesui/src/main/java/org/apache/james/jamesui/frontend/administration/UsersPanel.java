@@ -5,6 +5,7 @@ import java.io.File;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.james.jamesui.backend.api.Client;
+import org.apache.james.jamesui.frontend.administration.users.Quota;
 import org.vaadin.dialogs.ConfirmDialog;
 
 import com.jensjansson.pagedtable.PagedTable;
@@ -39,8 +40,11 @@ public class UsersPanel extends VerticalLayout {
 	
     private Client jamesClient;
 
+    private Quota userQuota;
+    
     private Label totalUsers;
-    private PagedTable usersTable;	
+    private PagedTable usersTable;
+    private PagedTable mailboxesTable;
     private TextField newUserTextField;
     private PasswordField newUserPasswordTextField;
     private VerticalLayout leftPanelLayout;	
@@ -66,8 +70,10 @@ public class UsersPanel extends VerticalLayout {
         setSizeFull();
 		 
         this.jamesClient = client;
+        this.userQuota = new Quota(this.jamesClient);
         String[] dataSet = this.jamesClient.getAllusers();
         
+        // table layout
         this.leftPanelLayout = new VerticalLayout();			    
 
         this.totalUsers = new Label();
@@ -76,7 +82,7 @@ public class UsersPanel extends VerticalLayout {
         this.usersTable.setSelectable( true );
         this.usersTable.addContainerProperty("Users", String.class, null);	   
         this.usersTable.addStyleName(Reindeer.TABLE_STRONG);		
-        this.usersTable.setWidth(90, Unit.PERCENTAGE);
+        this.usersTable.setWidth(99, Unit.PERCENTAGE);
         this.usersTable.setPageLength(15);
         this.usersTable.addGeneratedColumn("Delete", new DeleteColoumnGenerator());					 
         this.usersTable.setColumnWidth("Delete", 40);
@@ -87,6 +93,7 @@ public class UsersPanel extends VerticalLayout {
         this.leftPanelLayout.addComponent(usersTable);
         this.leftPanelLayout.addComponent(usersTable.createControls());
 
+        // Add new user panel
         this.newUserTextField = new TextField("User:");
         this.newUserTextField.setWidth("300px");
         this.newUserTextField.setRequired(true);        
@@ -104,8 +111,20 @@ public class UsersPanel extends VerticalLayout {
         this.addUserButton = new Button("Add User");		
         this.addUserButton.addClickListener(new AddUserButtonListener());
 
+        VerticalLayout addUserPanelLayout = new VerticalLayout();
+        addUserPanelLayout.setMargin(true);
 
-        //---- user password edit form
+        this.addUserFormLayout = new FormLayout();	
+        this.addUserFormLayout.setSpacing(true);
+        this.addUserFormLayout.setMargin(new MarginInfo(false, false, false, true));		
+        this.addUserFormLayout.addComponent(new Label("Note: User must contain an existing @domain part"));
+        this.addUserFormLayout.addComponent(newUserTextField);
+        this.addUserFormLayout.addComponent(newUserPasswordTextField);
+        this.addUserFormLayout.addComponent(addUserButton);	
+
+        addUserPanelLayout.addComponent(addUserFormLayout);
+
+        // Editing panel
         this.selectedUserText = new TextField("User:");
         this.selectedUserText.setWidth("300px");
 
@@ -124,21 +143,8 @@ public class UsersPanel extends VerticalLayout {
         this.changePasswordButton = new Button("Change Password");
         this.changePasswordButton.addClickListener(new ChangeUserPasswordButtonListener());
 
-        //------- Right panel: the editing form to add a new user and modify password
-        VerticalLayout addUserPanelLayout = new VerticalLayout(); 
-
-        /* add user form */
-        this.addUserFormLayout = new FormLayout();	
-        this.addUserFormLayout.setSpacing(true);
-        this.addUserFormLayout.setMargin(new MarginInfo(false, false, false, true));		
-        this.addUserFormLayout.addComponent(new Label("Note: User must contain an existing @domain part"));
-        this.addUserFormLayout.addComponent(newUserTextField);
-        this.addUserFormLayout.addComponent(newUserPasswordTextField);
-        this.addUserFormLayout.addComponent(addUserButton);	
-
-        addUserPanelLayout.addComponent(addUserFormLayout);
-        
-        VerticalLayout editUserPanelLayout = new VerticalLayout(); 
+        VerticalLayout editUserPanelLayout = new VerticalLayout();
+        editUserPanelLayout.setMargin(true);
         
         this.editUserFormLayout = new FormLayout();
         this.editUserFormLayout.setMargin(new MarginInfo(true,false,false,true)); 
@@ -152,9 +158,33 @@ public class UsersPanel extends VerticalLayout {
 
         editUserPanelLayout.addComponent(editUserFormLayout);	
         
+        // Mailboxes
+        VerticalLayout mailboxesPanelLayout = new VerticalLayout();
+        mailboxesPanelLayout.setMargin(true);
+        
+        Button reindexButton = new Button("Reindex mailboxes");
+        reindexButton.addClickListener(new ReindexMailboxesButtonListener());
+        
+        this.mailboxesTable = new PagedTable("");	   
+        this.mailboxesTable.setSelectable( true );
+        this.mailboxesTable.addContainerProperty("Mailbox", String.class, null);
+        this.mailboxesTable.addContainerProperty("Id", String.class, null);
+        this.mailboxesTable.addStyleName(Reindeer.TABLE_STRONG);		
+        this.mailboxesTable.setWidth(99, Unit.PERCENTAGE);
+        this.mailboxesTable.setPageLength(15);
+        
+        mailboxesPanelLayout.addComponent(reindexButton);
+        mailboxesPanelLayout.addComponent(mailboxesTable);
+        
+        // Quota layout
+        VerticalLayout quota = this.userQuota.getQuotasLayout();
+        
+        // Global layout
         TabSheet usersTabsheet = new TabSheet();
         usersTabsheet.addTab(addUserPanelLayout,"Add User");
         usersTabsheet.addTab(editUserPanelLayout,"Edit User");
+        usersTabsheet.addTab(mailboxesPanelLayout,"Mailboxes");
+        usersTabsheet.addTab(quota,"Quotas");
 
         this.horizontalSplitPanel = new HorizontalSplitPanel();
         this.horizontalSplitPanel.setStyleName(Reindeer.SPLITPANEL_SMALL);
@@ -188,10 +218,9 @@ public class UsersPanel extends VerticalLayout {
                 private static final long serialVersionUID = 1L;
 
                 @Override
-                public void click(com.vaadin.event.MouseEvents.ClickEvent event) 
-                {							
-                        Item selectedItem = source.getContainerDataSource().getItem(itemId);
-                        showConfirmDeletion("Delete ? "+ selectedItem.getItemProperty("Users").getValue(), selectedItem.getItemProperty("Users").getValue()+"", jamesClient);							 
+                public void click(com.vaadin.event.MouseEvents.ClickEvent event) {							
+                    Item selectedItem = source.getContainerDataSource().getItem(itemId);
+                    showConfirmDeletion("Delete ? "+ selectedItem.getItemProperty("Users").getValue(), selectedItem.getItemProperty("Users").getValue()+"", jamesClient);							 
                 }
             });	
 
@@ -218,7 +247,20 @@ public class UsersPanel extends VerticalLayout {
             }	
         }
     }
-	
+
+    /**
+     * Button Listener invoked when the user press the "Reindex mailboxes" button
+     * @author r2406
+     *
+     */
+    private class ReindexMailboxesButtonListener implements com.vaadin.ui.Button.ClickListener {
+        private static final long serialVersionUID = 1L;
+
+        public void buttonClick(ClickEvent event) {			
+            showConfirmReindex("Confirm reindex task?", selectedUserText.getValue(), jamesClient);
+        }
+    }
+    
 	
     /**
      * Button Listener invoked when the user press the "Add User" button
@@ -271,20 +313,43 @@ public class UsersPanel extends VerticalLayout {
             @Override
             public void itemClick(ItemClickEvent event) {
                 Object itemId = event.getItemId();
-                String clickedUser = (String) event.getItem().getItemProperty("Users").getValue();
-                Notification.show("Selected user: " + clickedUser);
+                String selectedUser = (String) event.getItem().getItemProperty("Users").getValue();
+                Notification.show("Selected user: " + selectedUser);
+                
+                // Enable edit block
                 editUserFormLayout.setEnabled(true);	
                 newUserPasswordText.setValue("");
                 retypeNewUserPasswordText.setValue("");
-                selectedUserText.setValue(clickedUser);	
+                selectedUserText.setValue(selectedUser);	
                 selectedUserText.setEnabled(false);
+                
+                // Update children components
+                userQuota.setUser(selectedUser);
+                updateMailboxTable(selectedUser);
             }
         });
 
-        usersTable.refreshRowCache();        
+        usersTable.refreshRowCache();
         totalUsers.setValue("Total User: " + dataSet.length);
     }
-	
+
+    private void updateMailboxTable(String user) {
+
+        String[][] mailboxes = jamesClient.getUserMailboxes(user);		
+        Object newItemId = null;
+        Item row = null;
+
+        mailboxesTable.removeAllItems();
+        for (String[] mailbox : mailboxes) {
+            newItemId = mailboxesTable.addItem();
+            row = mailboxesTable.getItem(newItemId);
+            row.getItemProperty("Id").setValue(mailbox[0]);
+            row.getItemProperty("Mailbox").setValue(mailbox[1]);
+        }
+        
+        mailboxesTable.refreshRowCache();
+    }
+    
     /**
      * Utility method  that show a window confirmation using Vaadin "confirm window" component
      * @param message The message to show in the confirm window
@@ -321,6 +386,26 @@ public class UsersPanel extends VerticalLayout {
                 if (dialog.isConfirmed()) {		                	
                    jamesClient.changeUserPassword(userToEdit, newPassword);
                    Notification.show("Operation Executed Successfully !", Type.HUMANIZED_MESSAGE);    	
+                }
+            }
+        });
+    }
+    
+    
+    /**
+     * Show a window confirmation using Vaadin "confirm window" component to ask confirmation for change password
+     * @param message The message to show in the confirm window
+     * @param userToEdit the User to change password
+     * @param newPassword The new user password
+     * @param jamesClient The client to connect with James
+     */
+    private void showConfirmReindex(String message, final String user, final Client jamesClient) {	
+        ConfirmDialog.show(this.getUI(), "Please Confirm:", message, "Yes", "No", new ConfirmDialog.Listener() {
+            private static final long serialVersionUID = 1L;
+            public void onClose(ConfirmDialog dialog) {
+                if (dialog.isConfirmed()) {		                	
+                   jamesClient.reindexUserMailboxes(user);
+                   Notification.show("Operation Executed Successfully!", Type.HUMANIZED_MESSAGE);    	
                 }
             }
         });

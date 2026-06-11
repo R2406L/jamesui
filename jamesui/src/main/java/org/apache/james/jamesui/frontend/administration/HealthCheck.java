@@ -109,14 +109,13 @@ public class HealthCheck extends VerticalLayout {
         statusTable.removeAllItems();
         
         JSONArray checksList = dataSet.getJSONArray("checks");
-
-        for (int i = 0; i < checksList.length(); i++) {        	
+        for (int i = 0; i < checksList.length(); i++) {
             JSONObject elem = checksList.getJSONObject(i);
             newItemId = statusTable.addItem();
             row = statusTable.getItem(newItemId);
             row.getItemProperty("Name").setValue(elem.getString("componentName"));
             row.getItemProperty("Status").setValue(elem.getString("status"));
-            row.getItemProperty("Cause").setValue(elem.getString("cause"));
+            row.getItemProperty("Cause").setValue((elem.isNull("cause")) ? "" : elem.getString("cause"));
         }
         statusTable.refreshRowCache();        
     }

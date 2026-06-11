@@ -12,7 +12,7 @@
   
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <vaadin.version>7.3.0</vaadin.version>
+        <vaadin.version>7.5.0</vaadin.version>
         <vaadin.plugin.version>${vaadin.version}</vaadin.plugin.version>		
         <james.lib.version>3.0-beta4</james.lib.version>
         <camel.lib.version>2.13.1</camel.lib.version>
@@ -244,6 +244,12 @@
             <version>2.0.5</version>			
         </dependency>		
 
+        <dependency>
+            <groupId>com.vaadin.addon</groupId>
+            <artifactId>vaadin-charts</artifactId>
+            <version>3.2.0</version>
+        </dependency>
+
         <!-- Vaadin - Spring integration -->
         <dependency>
             <groupId>ru.xpoft.vaadin</groupId>
@@ -366,6 +372,12 @@
             <groupId>org.apache.james</groupId>
             <artifactId>james-server-protocols-imap4</artifactId>
             <version>${james.lib.version}</version>
+        </dependency>
+        
+        <dependency>
+            <groupId>org.json</groupId>
+            <artifactId>json</artifactId>
+            <version>20240303</version>
         </dependency>
     </dependencies>
   
