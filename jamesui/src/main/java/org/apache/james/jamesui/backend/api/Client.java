@@ -66,7 +66,7 @@ public class Client {
             url = new URI(jamesuiConfiguration.getJamesApiUrl() + "/" + path);
         } catch (URISyntaxException e) {
             LOG.error(e.toString());
-            return new Response(500, "");
+            return new Response(500, "{}");
         }
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
@@ -81,15 +81,15 @@ public class Client {
             response = client.send(request, HttpResponse.BodyHandlers.ofString());
         } catch(IOException e) {
             LOG.error(e.toString());
-            return new Response(500, "");
+            return new Response(500, "{}");
         } catch(InterruptedException e) {
             LOG.error(e.toString());
-            return new Response(500, "");
+            return new Response(500, "{}");
         }
 
         if (response.statusCode() < 200 && response.statusCode() >= 300) {
             LOG.error("Apache James response error " + response.statusCode() + ": " + response.body());
-            return new Response(500, "");
+            return new Response(500, "{}");
         }
         
         LOG.debug("Server response: " + response.body().toString());
