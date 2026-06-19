@@ -22,7 +22,8 @@ import java.util.Set;
 import jdk.internal.org.jline.utils.Log;
 
 import org.apache.james.jamesui.backend.configuration.bean.JamesuiConfiguration;
-import org.apache.james.jamesui.backend.configuration.bean.RecipientRewriteMapping;
+import org.apache.james.jamesui.backend.configuration.bean.RecipientRewriteMappings;
+import org.apache.james.jamesui.backend.configuration.bean.RewriteMapping;
 import org.json.JSONObject;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -66,7 +67,7 @@ public class Client {
             url = new URI(jamesuiConfiguration.getJamesApiUrl() + "/" + path);
         } catch (URISyntaxException e) {
             LOG.error(e.toString());
-            return new Response(500, "");
+            return new Response(500, "{}");
         }
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
@@ -81,15 +82,15 @@ public class Client {
             response = client.send(request, HttpResponse.BodyHandlers.ofString());
         } catch(IOException e) {
             LOG.error(e.toString());
-            return new Response(500, "");
+            return new Response(500, "{}");
         } catch(InterruptedException e) {
             LOG.error(e.toString());
-            return new Response(500, "");
+            return new Response(500, "{}");
         }
 
         if (response.statusCode() < 200 && response.statusCode() >= 300) {
             LOG.error("Apache James response error " + response.statusCode() + ": " + response.body());
-            return new Response(500, "");
+            return new Response(500, "{}");
         }
         
         LOG.debug("Server response: " + response.body().toString());
@@ -250,8 +251,8 @@ public class Client {
     }
     
     // Extension methods
-    public List<RecipientRewriteMapping> listMappings() {
-        List<RecipientRewriteMapping> mappings = new ArrayList<RecipientRewriteMapping>();
+    public List<RecipientRewriteMappings> listMappings() {
+        List<RecipientRewriteMappings> mappings = new ArrayList<RecipientRewriteMappings>();
         Response source = Send("GET", "mappings", "");
         try {
             JSONObject result = new JSONObject(source.text);
@@ -259,12 +260,15 @@ public class Client {
             
             while(keys.hasNext()) {
                 String key = keys.next();
-                Set<String> recipients = new HashSet<>();
+                Set<RewriteMapping> recipients = new HashSet<>();
                 JSONArray recipientSources = result.getJSONArray(key);
                 for (int i = 0; i < recipientSources.length(); i++) {
-                    recipients.add(recipientSources.getJSONObject(i).getString("mapping"));
+                    String map = recipientSources.getJSONObject(i).getString("mapping");
+                    String type = recipientSources.getJSONObject(i).getString("type");
+                    RewriteMapping target = new RewriteMapping(type, map);
+                    recipients.add(target);
                 }
-                RecipientRewriteMapping mapping = new RecipientRewriteMapping(key, recipients);
+                RecipientRewriteMappings mapping = new RecipientRewriteMappings(key, recipients);
                 mappings.add(mapping);
             }
             return mappings;
@@ -289,7 +293,12 @@ public class Client {
     }
     
     public boolean addAddressMapping(String user, String domain, String address) throws Exception {
-        Response source = Send("POST", "/mappings/address/" + user + "@" + domain + "/targets/" + address, "");
+        Response source = Send("POST", "mappings/address/" + user + "@" + domain + "/targets/" + address, "");
+        return source.code == 204;
+    }
+
+    public boolean removeAddressMapping(String user, String address) throws Exception {
+        Response source = Send("DELETE", "mappings/address/" + user + "/targets/" + address, "");
         return source.code == 204;
     }
     
@@ -298,13 +307,8 @@ public class Client {
         return source.code == 204;
     }
     
-    public boolean removeAddressMapping(String user, String domain, String address) throws Exception {
-        Response source = Send("DELETE", "/mappings/address/" + user + "@" + domain + "/targets/" + address, "");
-        return source.code == 204;
-    }
-    
-    public boolean removeRegexMapping(String user, String domain, String regex) throws Exception {
-        Response source = Send("DELETE", "/mappings/regex/" + user + "@" + domain + "/targets/" + regex, "");
+    public boolean removeRegexMapping(String user, String regex) throws Exception {
+        Response source = Send("DELETE", "mappings/regex/" + user + "/targets/" + regex, "");
         return source.code == 204;
     }
     
@@ -314,7 +318,7 @@ public class Client {
    }
    
    public boolean removeDomainMapping(String domain, String targetDomain) throws Exception {
-        Response source = Send("DELETE", "/domainMappings/" + domain, targetDomain);
+        Response source = Send("DELETE", "domains/"+targetDomain+"/aliases/"+domain, "");
         return source.code == 204;
    }
    

@@ -2,12 +2,14 @@
 package org.apache.james.jamesui.frontend.administration;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.james.jamesui.backend.api.Client;
-import org.apache.james.jamesui.backend.configuration.bean.RecipientRewriteMapping;
+import org.apache.james.jamesui.backend.configuration.bean.RecipientRewriteMappings;
 import org.apache.james.jamesui.frontend.administration.mappings.AddressMapping;
 import org.apache.james.jamesui.frontend.administration.mappings.DomainMapping;
 import org.apache.james.jamesui.frontend.administration.mappings.RegexMapping;
@@ -15,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.vaadin.dialogs.ConfirmDialog;
 
+import com.vaadin.data.Item;
 import com.vaadin.event.FieldEvents.FocusEvent;
 import com.vaadin.event.ItemClickEvent;
 import com.vaadin.event.ItemClickEvent.ItemClickListener;
@@ -32,6 +35,7 @@ import com.vaadin.ui.Tree;
 import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.VerticalSplitPanel;
 import com.vaadin.ui.themes.Reindeer;
+import org.apache.james.jamesui.backend.configuration.bean.RewriteMapping;
 
 /**
  * Create the panel where the user can manage the Address mapping
@@ -53,7 +57,8 @@ public class AddressMappingPanel extends VerticalLayout {
     private Button compactMappingButton;
     private Button expandMappingButton;
 
-    private HashSet<String> mappingToRemoveSet = new HashSet<String>();
+    private HashSet<String> mappingToRemoveSet = new HashSet<>();
+    private List<String> displayed = new ArrayList<>();
 
     private Client jamesClient; 
 
@@ -69,6 +74,17 @@ public class AddressMappingPanel extends VerticalLayout {
 
         this.jamesClient = jamesClient;
 
+        addressMappingTree = new Tree();
+        addressMappingTree.setHeight(100, Unit.PERCENTAGE);
+        addressMappingTree.addStyleName("checkboxed");		
+        addressMappingTree.setSelectable(false);
+
+        try {              	  
+            updateMappingTreeData();        		
+        } catch (Exception e) {
+            LOG.error("Error retrieving mapping, cause: ", e);
+        } 
+        
         VerticalSplitPanel leftPanelLayout = new VerticalSplitPanel();
         leftPanelLayout.setStyleName(Reindeer.SPLITPANEL_SMALL);	
         leftPanelLayout.setSplitPosition(85, Sizeable.Unit.PERCENTAGE);
@@ -81,7 +97,7 @@ public class AddressMappingPanel extends VerticalLayout {
                 if(mappingToRemoveSet.isEmpty())
                    Notification.show("Please, select an Item !", Type.HUMANIZED_MESSAGE);
                 else
-                   showConfirmAndDelete(jamesClient);
+                   showConfirmAndDelete();
             }
         });
 
@@ -100,21 +116,10 @@ public class AddressMappingPanel extends VerticalLayout {
 
             private static final long serialVersionUID = 1L;
             public void buttonClick(ClickEvent event) {	
-                    for(Object itemId: addressMappingTree.getItemIds())
-                       addressMappingTree.expandItem(itemId);
+                for(Object itemId: addressMappingTree.getItemIds())
+                   addressMappingTree.expandItem(itemId);
             }
-        });	
-
-        addressMappingTree = new Tree();
-        addressMappingTree.setHeight(100, Unit.PERCENTAGE);
-        addressMappingTree.addStyleName("checkboxed");		
-        addressMappingTree.setSelectable(false);
-
-        try {              	  
-            updateMappingTreeData();        		
-        } catch (Exception e) {
-            LOG.error("Error retrieving mapping, cause: ", e);
-        } 
+        });
 
         HorizontalLayout bottomPageLayout = new HorizontalLayout();
         bottomPageLayout.setMargin(true);
@@ -149,7 +154,7 @@ public class AddressMappingPanel extends VerticalLayout {
      * Show a window confirmation using Vaadin "confirm window" component and proceed with Mapping deletion if user confirm	
      * 
      */
-    private void showConfirmAndDelete(final Client jamesClient) {	
+    private void showConfirmAndDelete() {	
 
         ConfirmDialog.show(this.getUI(), "Please Confirm:", "Remove "+mappingToRemoveSet.size()+ " Mapping(s) ?","Yes","No", new ConfirmDialog.Listener() {
 
@@ -160,137 +165,162 @@ public class AddressMappingPanel extends VerticalLayout {
                 if (dialog.isConfirmed()) {	
                     boolean errorFlag = false;
 
-                    //the tree node that represents the mapping
-                    String mappingParent;
-                    String mappingToRemove;		                	
-                    Iterator<String>  mappingToRemoveIterator = mappingToRemoveSet.iterator();
+                    for (String m : mappingToRemoveSet) {
+                    
+                        String current = m;
+                        List<String> found = new ArrayList<>();
+                        found.add(clearId(current));
 
-                    while(mappingToRemoveIterator.hasNext()) {
-                        mappingToRemove = mappingToRemoveIterator.next();
-
-                        //System.out.println("Item to Remove: "+mappingToRemove);			    				
-                        mappingParent = (String) addressMappingTree.getParent(mappingToRemove);
-                        //System.out.println("Mapping Parent: "+mappingParent);
-
-                        //analyze node parent (ie: the address that own the mapping)
-                        String[] token = mappingParent.split("@");
-                        String ownerUser = token[0];
-                        String ownerDomain = token[1];
+                        while (!addressMappingTree.isRoot(current)) {
+                            current = addressMappingTree.getParent(current).toString();
+                            found.add(clearId(current));
+                        }
+                        
+                        if (found.size() != 3) {
+                            LOG.info("Incomplete matching selected");
+                            continue;
+                        }
 
                         try{			    				
-                            if(mappingToRemove.startsWith("regex")) {
-                                //regex mapping eg:  regex:theregex
-                                LOG.debug("Calling removeRegexMapping("+ownerUser+","+ ownerDomain+","+ mappingToRemove.split(":")[1]+")");
-                                jamesClient.removeRegexMapping(ownerUser, ownerDomain, mappingToRemove.split(":")[1]);
-                            } else if(mappingToRemove.startsWith("domain")) {
-                                //domain mapping eg: domain:thedomain
-                                LOG.debug("Calling removeDomainMapping("+ownerDomain+","+mappingToRemove.split(":")[1]+")");
-                                jamesClient.removeDomainMapping(ownerDomain, mappingToRemove.split(":")[1]);
-                            } else {
-                                //address mapping eg: theuser@thedomain
-                                LOG.debug("Calling removeAddressMapping("+ownerUser+","+ ownerDomain+","+mappingToRemove+")");
-                                jamesClient.removeAddressMapping(ownerUser, ownerDomain, mappingToRemove);
-                            }	
-
-                        }catch(Exception e){
+                            switch (found.getLast()) {
+                                case "Regex":
+                                    LOG.debug("Calling removeRegexMapping("+found.getFirst()+","+found.get(1)+")");
+                                    jamesClient.removeRegexMapping(found.get(1), found.getFirst());
+                                    break;
+                                case "DomainAlias":
+                                    LOG.debug("Calling removeDomainMapping("+found.get(1)+","+found.getFirst()+")");
+                                    jamesClient.removeDomainMapping(found.get(1), found.getFirst());
+                                    break;
+                                default:
+                                    LOG.debug("Calling removeAddressMapping("+found.get(1)+","+found.getFirst()+")");
+                                    jamesClient.removeAddressMapping(found.get(1), found.getFirst());
+                                    break;
+                            }
+                        } catch(Exception e) {
                             LOG.error("Error removing Address Mapping, cause: ",e);			    					
                             errorFlag = true;
                             break;
-                        }			    				
+                        }	
                     }
 
                     if(!errorFlag){	
                         Notification.show("Mapping(s) Removed Successfully !", Type.HUMANIZED_MESSAGE);
                         mappingToRemoveSet.clear();
                         updateMappingTreeData();
-                    }else{
+                    } else {
                         LOG.error("Error Removing Mapping");
-//                        Notification.show("Error Removing Mapping(s) See log file !", Type.ERROR_MESSAGE);
                         mappingToRemoveSet.clear();
                         updateMappingTreeData();
                     }
-
-                } else {
-                       // User did not confirm		                	
                 }
             }
         });
     }
 
+    private String computeId(String s) {
+        if (displayed.contains(s)) {
+            int count = Collections.frequency(displayed, s);
+            displayed.add(s);
+            return s+" ("+count+")";
+        } else {
+            displayed.add(s);
+            return s;
+        }
+    }
+    
+    private String clearId(String s) {
+        if (s.contains(" (")) {
+            return s.substring(0, s.lastIndexOf(" ("));
+        } else {
+            return s;
+        }
+    }
+    
     /**
      * Insert in the Mapping Tree the dataset provided in argument
      * @param dataSet
      */
     public void updateMappingTreeData(){
-        final List<RecipientRewriteMapping> dataSet = jamesClient.listMappings();
+        final List<RecipientRewriteMappings> dataSet = jamesClient.listMappings();
 
-        addressMappingTree.removeAllItems(); 
-        // The tree root nodes (ie: user@doamin)
-        final HashSet<String> usersAndDomainSet = new HashSet<String>();
+        addressMappingTree.removeAllItems();
+        displayed.clear();
 
-        for (int i=0; i<dataSet.size(); i++) {       
-            // The value show in the "user" column
-            String userAndDomain = dataSet.get(i).getUserAndDomain();
-            if(!userAndDomain.equalsIgnoreCase("*@*")) { 
-                LOG.debug("Mapping panel, UserAndDomain: "+userAndDomain);	     	     
-                addressMappingTree.addItem(userAndDomain); 
+//        final HashSet<RewriteMapping> usersAndDomainSet = new HashSet<RewriteMapping>();
 
-                usersAndDomainSet.add(userAndDomain);
+        addressMappingTree.addItem("DomainAlias");
+        addressMappingTree.addItem("Address");
+        addressMappingTree.addItem("Regex");
+        
+        for (int i = 0; i < dataSet.size(); i++) {
 
-                Object[] it = dataSet.get(i).getMappings().toArray();
+            RecipientRewriteMappings el = dataSet.get(i);
+            String source = el.getUserAndDomain();
+            String id = el.getId();
+            
+//            if(!userAndDomain.equalsIgnoreCase("*@*")) { 
+//                LOG.debug("Mapping panel, UserAndDomain: "+userAndDomain);	     	     
+//                addressMappingTree.addItem(userAndDomain); 
+
+//                usersAndDomainSet.add(userAndDomain);
+
+            RewriteMapping[] mappings = el.getMappings().toArray(new RewriteMapping[el.getMappings().size()]);
                 // mappingTable.setPageLength(it.length);
 
-                for (int j=0; j<it.length; j++) {	         		        			
-                    LOG.debug("Found Address Mapping: "+it[j]);       		
-                    addressMappingTree.addItem(it[j]);
-                    addressMappingTree.setParent(it[j], userAndDomain);
+            for (RewriteMapping map : mappings) {
+                String src = computeId(source);
+                String m = computeId(map.getMapping());
+                
+                addressMappingTree.addItem(src);
+                addressMappingTree.setParent(src, map.getType());
+                
+                addressMappingTree.addItem(m);
+                addressMappingTree.setParent(m, src);
+            }
+
+            final HashSet<String> checked = new HashSet<String>();
+
+            // Decide which css style apply returning a css suffix (se jamesuitheme.css) 
+            Tree.ItemStyleGenerator itemStyleGenerator = new Tree.ItemStyleGenerator() {	    		  
+
+                private static final long serialVersionUID = 1L;
+
+                /*
+                 * @param itemId Is the name shows in the Tree node (eg auser@adomanin.com )
+                 */
+                @Override	
+                public String getStyle(Tree source, Object itemId) {
+                    if(!id.contains(itemId.toString())){
+                        if (checked.contains(itemId.toString()))	    		        
+                            return "checked";
+                        else
+                            return "unchecked";
+                    }
+                    return "normal";
+
                 }
+            }; 
 
-                // Remember which nodes are checked (use a Set implementation to prevent duplicates)
-                final HashSet<String> checked = new HashSet<String>();
+            // Allow the user to "check" and "uncheck" tree nodes  by clicking them
+            addressMappingTree.addItemClickListener(new ItemClickListener() {
+                private static final long serialVersionUID = 1L;
 
-                // Decide which css style apply returning a css suffix (se jamesuitheme.css) 
-                Tree.ItemStyleGenerator itemStyleGenerator = new Tree.ItemStyleGenerator() {	    		  
+                @Override
+                public void itemClick(ItemClickEvent event) {
 
-                    private static final long serialVersionUID = 1L;
-
-                    /*
-                     * @param itemId Is the name shows in the Tree node (eg auser@adomanin.com )
-                     */
-                    @Override	
-                    public String getStyle(Tree source, Object itemId) {
-
-                        if(!usersAndDomainSet.contains(itemId)){
-                            if (checked.contains(itemId))	    		        
-                                return "checked";
-                            else
-                                return "unchecked";
-                            }
-                            return "normal";  // Use default style for root node (ie: user@domain)
+                    if (checked.contains(event.getItemId())){
+                        checked.remove(event.getItemId());
+                        mappingToRemoveSet.remove(event.getItemId());
+                    }else{
+                        checked.add((String) event.getItemId());
+                        mappingToRemoveSet.add((String) event.getItemId());
                     }
-                }; 
 
-                // Allow the user to "check" and "uncheck" tree nodes  by clicking them
-                addressMappingTree.addItemClickListener(new ItemClickListener() {
-                    private static final long serialVersionUID = 1L;
-
-                    @Override
-                    public void itemClick(ItemClickEvent event) {
-
-                        if (checked.contains(event.getItemId())){
-                            checked.remove(event.getItemId());
-                            mappingToRemoveSet.remove(event.getItemId());
-                        }else{
-                            checked.add((String) event.getItemId());
-                            mappingToRemoveSet.add((String) event.getItemId());
-                        }
-
-                        // Trigger running the item style generator which the return the class name to return
-                        addressMappingTree.markAsDirty();						
-                    }
-                });	 	    		
-                addressMappingTree.setItemStyleGenerator(itemStyleGenerator);	         	
-            }	
+                    // Trigger running the item style generator which the return the class name to return
+                    addressMappingTree.markAsDirty();						
+                }
+            });	 	    		
+            addressMappingTree.setItemStyleGenerator(itemStyleGenerator);	         	
         }
     }
 }
