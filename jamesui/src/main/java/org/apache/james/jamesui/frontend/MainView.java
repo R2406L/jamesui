@@ -56,7 +56,7 @@ public class MainView extends VerticalLayout implements View {
         this.bodyTabsheet.addTab(new DomainsPanel(jamesClient),"Domains");
         this.bodyTabsheet.addTab(new UsersPanel(jamesClient),"Users"); 
         this.bodyTabsheet.addTab(new AddressMappingPanel(jamesClient),"Mapping");		
-        this.bodyTabsheet.addTab(new ProductInfoPanel(jamesuiConfiguration),"Produtc Info");
+        this.bodyTabsheet.addTab(new ProductInfoPanel(jamesuiConfiguration),"About product");
         
         this.footer = new FooterPanel(jamesClient);
 
